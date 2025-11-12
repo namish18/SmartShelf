@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
-import { Page, UserRole } from '../types';
+import { Page, User, UserRole } from '../types'; // Import User type
 import { ICONS } from '../constants';
 import AdminDashboard from './AdminDashboard';
 import ManagerDashboard from './ManagerDashboard';
@@ -9,10 +9,10 @@ import WorkerDashboard from './WorkerDashboard';
 import InventoryPage from './InventoryPage';
 import ReportsPage from './ReportsPage';
 import SettingsPage from './SettingsPage';
-import TaskManagementPage from './TaskManagementPage'; // Import the new page
+import TaskManagementPage from './TaskManagementPage';
 
 interface MainLayoutProps {
-  user: { name: string; role: UserRole };
+  user: User; // Use the full User object
   handleLogout: () => void;
 }
 
@@ -38,8 +38,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
   const renderPage = (page: Page) => {
     switch (page) {
         case Page.Inventory: return <InventoryPage />;
-        case Page.Reports: return <ReportsPage />;
-        case Page.Settings: return <SettingsPage />;
+        // Pass the user prop to ReportsPage and SettingsPage
+        case Page.Reports: return <ReportsPage user={user} />;
+        case Page.Settings: return <SettingsPage user={user} />;
         
         case Page.Dashboard:
             if (user.role === 'Admin') return <AdminDashboard />;
@@ -55,7 +56,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
 
         case Page.TaskManagement:
             if (user.role === 'Manager') {
-                return <TaskManagementPage />; // <-- This is the changed line
+                return <TaskManagementPage />;
             }
             return <div>Access Denied</div>;
 

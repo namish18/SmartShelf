@@ -1,6 +1,12 @@
 import React from 'react';
+import { User } from '../types';
 
-const SettingsPage: React.FC = () => {
+// Define props to accept the user
+interface SettingsPageProps {
+  user: User;
+}
+
+const SettingsPage: React.FC<SettingsPageProps> = ({ user }) => {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold font-heading mb-6">Settings</h1>
@@ -9,11 +15,13 @@ const SettingsPage: React.FC = () => {
         <form className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Full Name</label>
-            <input type="text" defaultValue="Admin User" className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border-transparent focus:outline-none focus:ring-2 focus:ring-primary" />
+            {/* Use user prop for default value */}
+            <input type="text" defaultValue={user.name} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border-transparent focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Email Address</label>
-            <input type="email" defaultValue="admin@example.com" className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border-transparent focus:outline-none focus:ring-2 focus:ring-primary" />
+            {/* Use user prop for default value */}
+            <input type="email" defaultValue={user.email} className="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border-transparent focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Change Password</label>

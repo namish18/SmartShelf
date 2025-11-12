@@ -11,7 +11,8 @@ const App: React.FC = () => {
     const storedTheme = localStorage.getItem('theme');
     return (storedTheme === 'dark' || storedTheme === 'light') ? storedTheme : 'light';
   });
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: UserRole } | null>(null);
+  // Use the full User object for currentUser state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
 
@@ -36,7 +37,7 @@ const App: React.FC = () => {
     // Here we just find the user by email.
     const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (user) {
-      setCurrentUser({ name: user.name, role: user.role });
+      setCurrentUser(user); // Set the full user object
     } else {
       alert('Invalid email or password.');
     }
@@ -58,7 +59,7 @@ const App: React.FC = () => {
 
     setUsers(prevUsers => [...prevUsers, newUser]);
     // Automatically log in the new user
-    setCurrentUser({ name: newUser.name, role: newUser.role });
+    setCurrentUser(newUser); // Set the full new user object
     setAuthView('login');
   };
 
