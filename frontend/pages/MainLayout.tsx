@@ -9,6 +9,7 @@ import WorkerDashboard from './WorkerDashboard';
 import InventoryPage from './InventoryPage';
 import ReportsPage from './ReportsPage';
 import SettingsPage from './SettingsPage';
+import TaskManagementPage from './TaskManagementPage'; // Import the new page
 
 interface MainLayoutProps {
   user: { name: string; role: UserRole };
@@ -54,8 +55,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
 
         case Page.TaskManagement:
             if (user.role === 'Manager') {
-                setCurrentPage(Page.Dashboard);
-                return <ManagerDashboard />;
+                return <TaskManagementPage />; // <-- This is the changed line
             }
             return <div>Access Denied</div>;
 
