@@ -44,26 +44,20 @@ const WorkerDashboard: React.FC = () => {
                                     <span className={`text-sm font-semibold ${statusClasses.text}`}>{task.status}</span>
                                 </div>
                             </div>
-                            {task.status !== 'Completed' && (
-                                <div className="flex space-x-2 flex-shrink-0">
-                                    {task.status === 'Pending' && (
-                                        <button 
-                                            onClick={() => handleStatusUpdate(task.id, 'In Progress')}
-                                            className="px-4 py-2 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors text-sm font-semibold"
-                                        >
-                                            Start Task
-                                        </button>
-                                    )}
-                                    {task.status === 'In Progress' && (
-                                        <button 
-                                            onClick={() => handleStatusUpdate(task.id, 'Completed')}
-                                            className="px-4 py-2 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors text-sm font-semibold"
-                                        >
-                                            Mark as Completed
-                                        </button>
-                                    )}
-                                </div>
-                            )}
+                            
+                            {/* Replaced buttons with a dropdown */}
+                            <div className="flex-shrink-0">
+                                <select
+                                    value={task.status}
+                                    onChange={(e) => handleStatusUpdate(task.id, e.target.value as Task['status'])}
+                                    className={`w-full sm:w-auto px-4 py-2 rounded-lg font-semibold bg-slate-100 dark:bg-slate-800 border-2 ${statusClasses.border} ${statusClasses.text} focus:outline-none focus:ring-2 focus:ring-primary transition-colors appearance-none cursor-pointer`}
+                                >
+                                    <option value="Pending">To be Started</option>
+                                    <option value="In Progress">In Progress</option>
+                                    <option value="Completed">Done</option>
+                                </select>
+                            </div>
+
                         </div>
                     );
                 }) : (
