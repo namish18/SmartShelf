@@ -136,6 +136,8 @@ exports.getTaskById = async (req, res) => {
   }
 };
 
+// ... other code remains the same ...
+
 // @desc    Create new task
 // @route   POST /api/tasks
 // @access  Private (Manager/Admin)
@@ -148,8 +150,11 @@ exports.createTask = async (req, res) => {
       return sendErrorResponse(res, 'Please provide description and assignedTo', 400);
     }
 
+    // Convert assignedTo to string if it's a number (from frontend)
+    const assignedToId = assignedTo.toString();
+
     // Verify the assignedTo user exists and is a Worker
-    const worker = await User.findById(assignedTo);
+    const worker = await User.findById(assignedToId);
     if (!worker) {
       return sendErrorResponse(res, 'Assigned user not found', 404);
     }
@@ -165,7 +170,7 @@ exports.createTask = async (req, res) => {
     // Create task
     const task = await Task.create({
       description,
-      assignedTo,
+      assignedTo: assignedToId,
       assignedBy: req.user.id
     });
 
@@ -185,9 +190,14 @@ exports.createTask = async (req, res) => {
       return sendErrorResponse(res, messages.join(', '), 400);
     }
     
+    if (error.name === 'CastError') {
+      return sendErrorResponse(res, 'Invalid user ID format', 400);
+    }
+    
     sendErrorResponse(res, 'Error creating task', 500);
   }
 };
+
 
 // @desc    Update task
 // @route   PUT /api/tasks/:id

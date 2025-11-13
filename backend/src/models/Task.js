@@ -12,15 +12,7 @@ const taskSchema = new mongoose.Schema(
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: [true, 'Task must be assigned to a worker'],
-      validate: {
-        validator: async function(value) {
-          const User = mongoose.model('User');
-          const user = await User.findById(value);
-          return user && user.role === 'Worker';
-        },
-        message: 'Task can only be assigned to users with Worker role'
-      }
+      required: [true, 'Task must be assigned to a worker']
     },
     assignedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -42,8 +34,46 @@ const taskSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toJSON: { 
+      virtuals: true,
+      transform: function(doc, ret) {
+        ret.id = ret._id.toString();
+        // Convert ObjectId references to strings
+        if (ret.assignedTo && ret.assignedTo._id) {
+          ret.assignedTo = ret.assignedTo._id.toString();
+        } else if (ret.assignedTo) {
+          ret.assignedTo = ret.assignedTo.toString();
+        }
+        if (ret.assignedBy && ret.assignedBy._id) {
+          ret.assignedBy = ret.assignedBy._id.toString();
+        } else if (ret.assignedBy) {
+          ret.assignedBy = ret.assignedBy.toString();
+        }
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      }
+    },
+    toObject: { 
+      virtuals: true,
+      transform: function(doc, ret) {
+        ret.id = ret._id.toString();
+        // Convert ObjectId references to strings
+        if (ret.assignedTo && ret.assignedTo._id) {
+          ret.assignedTo = ret.assignedTo._id.toString();
+        } else if (ret.assignedTo) {
+          ret.assignedTo = ret.assignedTo.toString();
+        }
+        if (ret.assignedBy && ret.assignedBy._id) {
+          ret.assignedBy = ret.assignedBy._id.toString();
+        } else if (ret.assignedBy) {
+          ret.assignedBy = ret.assignedBy.toString();
+        }
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      }
+    }
   }
 );
 

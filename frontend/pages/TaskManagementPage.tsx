@@ -137,10 +137,12 @@ const TaskManagementPage: React.FC = () => {
     }
   };
 
-  const getWorkerName = (workerId: number | string) => {
-    const worker = workers.find(w => w.id === workerId);
-    return worker ? worker.name : 'Unknown';
-  };
+  // Update the getWorkerName function:
+const getWorkerName = (workerId: string) => {
+  const worker = workers.find(w => w.id === workerId);
+  return worker ? worker.name : 'Unknown';
+};
+
 
   const handleAddNew = () => {
     setEditingTask(null);
