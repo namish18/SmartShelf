@@ -26,7 +26,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       // 1. Title
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(22);
-      doc.text('WMS Manager Report', 105, 20, { align: 'center' });
+      doc.text('SmartShelf Manager Report', 105, 20, { align: 'center' });
 
       // 2. Report Info
       doc.setFont('helvetica', 'normal');
@@ -104,7 +104,7 @@ const ReportsPage: React.FC<ReportsPageProps> = ({ user }) => {
       }
 
       // 6. Save PDF
-      doc.save(`WMS_Report_${user.name.replace(' ', '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+      doc.save(`SmartShelf_Report_${user.name.replace(' ', '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
 
     } catch (error) {
       console.error("Error generating PDF:", error);
