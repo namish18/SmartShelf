@@ -3,18 +3,18 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import LoginPage from './pages/LoginPage';
 import RegistrationPage from './pages/RegistrationPage';
 import MainLayout from './pages/MainLayout';
-import { UserRole, User } from './types';
-import { MOCK_USERS } from './constants';
+import { User } from './types';
+import { authService } from './services/authService';
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const storedTheme = localStorage.getItem('theme');
     return (storedTheme === 'dark' || storedTheme === 'light') ? storedTheme : 'light';
   });
-  // Use the full User object for currentUser state
+  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -26,47 +26,69 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (authService.isAuthenticated()) {
+        try {
+          const user = await authService.getCurrentUser();
+          setCurrentUser(user);
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          setCurrentUser(null);
+        }
+      }
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
+
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
   const themeValue = useMemo(() => ({ theme, toggleTheme }), [theme]);
 
-  const handleLogin = (email: string, password: string) => {
-    // In a real app, you'd validate the password against a hash.
-    // Here we just find the user by email.
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (user) {
-      setCurrentUser(user); // Set the full user object
-    } else {
-      alert('Invalid email or password.');
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      const user = await authService.login({ email, password });
+      setCurrentUser(user);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Login failed');
     }
   };
   
-  const handleRegister = (name: string, email: string, role: UserRole, password: string) => {
-    if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-        alert('A user with this email already exists.');
-        return;
+  const handleRegister = async (name: string, email: string, role: string, password: string) => {
+    try {
+      const user = await authService.register({ name, email, password, role: role as any });
+      setCurrentUser(user);
+      setAuthView('login');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Registration failed');
     }
-    
-    // In a real app, you would hash the password before saving.
-    const newUser: User = {
-        id: Date.now(),
-        name,
-        email,
-        role,
-    };
-
-    setUsers(prevUsers => [...prevUsers, newUser]);
-    // Automatically log in the new user
-    setCurrentUser(newUser); // Set the full new user object
-    setAuthView('login');
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setAuthView('login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      setCurrentUser(null);
+      setAuthView('login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-light-bg dark:bg-dark-bg">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-light-text dark:text-dark-text">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ThemeProvider value={themeValue}>
