@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
-import { Page, User, UserRole } from '../types'; // Import User type
+import { Page, User, UserRole } from '../types'; 
 import { ICONS } from '../constants';
 import AdminDashboard from './AdminDashboard';
 import ManagerDashboard from './ManagerDashboard';
@@ -10,9 +10,10 @@ import InventoryPage from './InventoryPage';
 import ReportsPage from './ReportsPage';
 import SettingsPage from './SettingsPage';
 import TaskManagementPage from './TaskManagementPage';
+import UserManagementPage from './UserManagementPage'; // Import the new page
 
 interface MainLayoutProps {
-  user: User; // Use the full User object
+  user: User; 
   handleLogout: () => void;
 }
 
@@ -38,7 +39,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
   const renderPage = (page: Page) => {
     switch (page) {
         case Page.Inventory: return <InventoryPage />;
-        // Pass the user prop to ReportsPage and SettingsPage
         case Page.Reports: return <ReportsPage user={user} />;
         case Page.Settings: return <SettingsPage user={user} />;
         
@@ -48,11 +48,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
             return <div>Dashboard not available for this role.</div>;
 
         case Page.UserManagement:
-             if (user.role === 'Admin') {
-                setCurrentPage(Page.Dashboard);
-                return <AdminDashboard />;
-             }
-             return <div>Access Denied</div>;
+            // This is the updated logic
+            if (user.role === 'Admin') {
+                return <UserManagementPage />;
+            }
+            return <div>Access Denied</div>;
 
         case Page.TaskManagement:
             if (user.role === 'Manager') {
@@ -65,7 +65,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ user, handleLogout }) => {
             return <div>Access Denied</div>;
             
         default:
-            return <AdminDashboard />;
+            // Fallback to user's default dashboard
+            setCurrentPage(getDefaultPage(user.role));
+            // Need to return the component to render
+            return renderPage(getDefaultPage(user.role)); 
     }
 };
 

@@ -2,9 +2,9 @@ import React from 'react';
 import { ICONS } from '../constants';
 import SummaryCard from '../components/SummaryCard';
 import { useManagerMetrics } from '../hooks/useManagerMetrics';
+import DemandForecastChart from '../components/DemandForecastChart'; // Import new component
 
 const ManagerDashboard: React.FC = () => {
-    // Use the new centralized hook to get all metrics
     const metrics = useManagerMetrics();
 
     return (
@@ -15,7 +15,7 @@ const ManagerDashboard: React.FC = () => {
                 <SummaryCard title="Total Inventory Items" value={metrics.totalItems} icon={ICONS.ArchiveBox} color="green" />
                 <SummaryCard title="Active Workers" value={metrics.workersOnline} icon={ICONS.UsersGroup} color="blue" />
             </div>
-             {/* Second row of KPIs */}
+            {/* Second row of KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <SummaryCard title="Order Completion" value={metrics.orderCompletionRate} icon={ICONS.Reports} color="green" />
                  <SummaryCard title="Low Stock Alerts" value={metrics.lowStockAlertCount} icon={ICONS.ArchiveBox} color="red" />
@@ -119,6 +119,9 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* NEW Demand Forecasting Section */}
+            <DemandForecastChart />
         </div>
     );
 };
