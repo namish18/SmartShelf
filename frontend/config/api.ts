@@ -14,15 +14,15 @@ export const API_ENDPOINTS = {
   // Users
   USERS: {
     BASE: '/users',
-    BY_ID: (id: number) => `/users/${id}`,
+    BY_ID: (id: string) => `/users/${id}`, // Changed from number to string
     WORKERS: '/users/workers',
     STATS: '/users/stats',
   },
   // Inventory
   INVENTORY: {
     BASE: '/inventory',
-    BY_ID: (id: number) => `/inventory/${id}`,
-    UPDATE_QUANTITY: (id: number) => `/inventory/${id}/quantity`,
+    BY_ID: (id: string) => `/inventory/${id}`, // Changed from number to string
+    UPDATE_QUANTITY: (id: string) => `/inventory/${id}/quantity`,
     ANALYTICS_CATEGORY: '/inventory/analytics/by-category',
     ANALYTICS_SUPPLIER: '/inventory/analytics/by-supplier',
     ANALYTICS_SUMMARY: '/inventory/analytics/summary',
@@ -30,9 +30,9 @@ export const API_ENDPOINTS = {
   // Tasks
   TASKS: {
     BASE: '/tasks',
-    BY_ID: (id: number) => `/tasks/${id}`,
+    BY_ID: (id: string) => `/tasks/${id}`, // Changed from number to string
     MY_TASKS: '/tasks/my-tasks',
-    UPDATE_STATUS: (id: number) => `/tasks/${id}/status`,
+    UPDATE_STATUS: (id: string) => `/tasks/${id}/status`, // Changed from number to string
     COMPLETION_RATE: '/tasks/analytics/completion-rate',
   },
   // Alerts

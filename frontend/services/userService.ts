@@ -45,14 +45,14 @@ export const userService = {
 
   async update(id: number, userData: Partial<User>): Promise<User> {
     const response = await apiClient.put<UserResponse>(
-      API_ENDPOINTS.USERS.BY_ID(id),
+      API_ENDPOINTS.USERS.BY_ID(id.toString()),
       userData
     );
     return response.data.user;
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.USERS.BY_ID(id));
+    await apiClient.delete(API_ENDPOINTS.USERS.BY_ID(id.toString()));
   },
 
   async getWorkers(): Promise<User[]> {

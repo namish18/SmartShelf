@@ -18,8 +18,14 @@ const AddEditTaskForm: React.FC<{
   });
   const [loading, setLoading] = useState(false);
 
+  // Debug: Log workers to see their IDs
+  useEffect(() => {
+    console.log('Available workers:', workers);
+  }, [workers]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    console.log(`Field ${name} changed to:`, value); // Debug log
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -27,6 +33,7 @@ const AddEditTaskForm: React.FC<{
     e.preventDefault();
     setLoading(true);
     try {
+      console.log('Submitting task with data:', formData); // Debug log
       onSave(formData);
     } catch (error) {
       console.error('Form submission error:', error);
@@ -121,6 +128,7 @@ const TaskManagementPage: React.FC = () => {
   const fetchTasks = async () => {
     try {
       const { tasks } = await taskService.getAll({ limit: 100 });
+      console.log('Fetched tasks:', tasks); // Debug log
       setTasks(tasks);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
@@ -131,18 +139,17 @@ const TaskManagementPage: React.FC = () => {
   const fetchWorkers = async () => {
     try {
       const workers = await userService.getWorkers();
+      console.log('Fetched workers:', workers); // Debug log
       setWorkers(workers);
     } catch (error) {
       console.error('Failed to fetch workers:', error);
     }
   };
 
-  // Update the getWorkerName function:
-const getWorkerName = (workerId: string) => {
-  const worker = workers.find(w => w.id === workerId);
-  return worker ? worker.name : 'Unknown';
-};
-
+  const getWorkerName = (workerId: string) => {
+    const worker = workers.find(w => w.id === workerId);
+    return worker ? worker.name : 'Unknown';
+  };
 
   const handleAddNew = () => {
     setEditingTask(null);
@@ -154,7 +161,7 @@ const getWorkerName = (workerId: string) => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
       try {
         await taskService.delete(id);
@@ -168,14 +175,19 @@ const getWorkerName = (workerId: string) => {
 
   const handleSave = async (taskData: any) => {
     try {
+      console.log('handleSave called with:', taskData); // Debug log
+      
       if (editingTask) {
         const updated = await taskService.update(editingTask.id, taskData);
         setTasks(prev => prev.map(t => (t.id === updated.id ? updated : t)));
       } else {
-        const created = await taskService.create({
+        // Ensure assignedTo is sent as string
+        const createData = {
           description: taskData.description,
-          assignedTo: parseInt(taskData.assignedTo),
-        });
+          assignedTo: String(taskData.assignedTo), // Explicitly convert to string
+        };
+        console.log('Creating task with:', createData); // Debug log
+        const created = await taskService.create(createData);
         setTasks(prev => [created, ...prev]);
       }
       setIsModalOpen(false);

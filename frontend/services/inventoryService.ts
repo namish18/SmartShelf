@@ -45,7 +45,7 @@ export const inventoryService = {
 
   async getById(id: number): Promise<InventoryItem> {
     const response = await apiClient.get<InventoryItemResponse>(
-      API_ENDPOINTS.INVENTORY.BY_ID(id)
+      API_ENDPOINTS.INVENTORY.BY_ID(id.toString())
     );
     return response.data.item;
   },
@@ -60,14 +60,14 @@ export const inventoryService = {
 
   async update(id: number, item: Partial<InventoryItem>): Promise<InventoryItem> {
     const response = await apiClient.put<InventoryItemResponse>(
-      API_ENDPOINTS.INVENTORY.BY_ID(id),
+      API_ENDPOINTS.INVENTORY.BY_ID(id.toString()),
       item
     );
     return response.data.item;
   },
 
   async delete(id: number): Promise<void> {
-    await apiClient.delete(API_ENDPOINTS.INVENTORY.BY_ID(id));
+    await apiClient.delete(API_ENDPOINTS.INVENTORY.BY_ID(id.toString()));
   },
 
   async getSummary(): Promise<any> {

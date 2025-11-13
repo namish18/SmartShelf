@@ -40,7 +40,8 @@ export const taskService = {
     return response.data;
   },
 
-  async create(taskData: { description: string; assignedTo: number }): Promise<Task> {
+  async create(taskData: { description: string; assignedTo: string }): Promise<Task> {
+    console.log('taskService.create called with:', taskData); // Debug log
     const response = await apiClient.post<TaskResponse>(
       API_ENDPOINTS.TASKS.BASE,
       taskData
@@ -48,7 +49,7 @@ export const taskService = {
     return response.data.task;
   },
 
-  async update(id: number, taskData: Partial<Task>): Promise<Task> {
+  async update(id: string, taskData: Partial<Task>): Promise<Task> {
     const response = await apiClient.put<TaskResponse>(
       API_ENDPOINTS.TASKS.BY_ID(id),
       taskData
@@ -56,7 +57,7 @@ export const taskService = {
     return response.data.task;
   },
 
-  async updateStatus(id: number, status: string): Promise<Task> {
+  async updateStatus(id: string, status: string): Promise<Task> {
     const response = await apiClient.patch<TaskResponse>(
       API_ENDPOINTS.TASKS.UPDATE_STATUS(id),
       { status }
@@ -64,7 +65,7 @@ export const taskService = {
     return response.data.task;
   },
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     await apiClient.delete(API_ENDPOINTS.TASKS.BY_ID(id));
   },
 };

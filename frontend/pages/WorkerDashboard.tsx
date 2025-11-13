@@ -27,7 +27,7 @@ const WorkerDashboard: React.FC = () => {
 
   const handleStatusChange = async (taskId: number, newStatus: string) => {
     try {
-      const updated = await taskService.updateStatus(taskId, newStatus);
+      const updated = await taskService.updateStatus(taskId.toString(), newStatus);
       setTasks(prev => prev.map(t => t.id === taskId ? updated : t));
     } catch (error) {
       console.error('Failed to update task status:', error);
