@@ -11,7 +11,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const taskRoutes = require('./routes/taskRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const forecastRoutes = require('./routes/forecastRoutes');
-
+const analyticsRoutes = require('./routes/analyticsRoutes');
 // Import middleware
 const { errorHandler, notFound } = require('./middlewares/errorMiddleware');
 
@@ -60,7 +60,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/forecast', forecastRoutes);
-
+app.use('/api/analytics', analyticsRoutes);
 // 404 handler
 app.use(notFound);
 
