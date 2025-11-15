@@ -40,7 +40,7 @@ const RegistrationPage: React.FC<RegistrationPageProps> = ({ onRegister, onSwitc
                 Create a new account
             </h2>
              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Join WMS AI
+                Join SmartShelf
             </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>

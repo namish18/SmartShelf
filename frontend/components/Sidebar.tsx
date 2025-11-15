@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, handleLo
     <div className={`flex flex-col h-full bg-card-light dark:bg-card-dark border-r border-border-light dark:border-border-dark ${isSidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out`}>
       <div className="flex items-center justify-center p-4 h-20">
         <ICONS.AiLogo className={`w-8 h-8 text-primary transition-transform duration-300 ${isSidebarOpen ? '' : 'scale-110'}`}/>
-        <h1 className={`text-xl font-bold font-heading ml-2 text-light-text dark:text-dark-text whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200`}>WMS AI</h1>
+        <h1 className={`text-xl font-bold font-heading ml-2 text-light-text dark:text-dark-text whitespace-nowrap ${isSidebarOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-200`}>SmartShelf</h1>
       </div>
       <nav className="flex-1 p-3">
         <ul className="space-y-2">
