@@ -369,6 +369,52 @@ const ManagerDashboard: React.FC = () => {
         return 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300';
     }
   };
+  
+  const REORDER_THRESHOLD = 10;
+
+  const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+
+  const calcLinearRegression = (y: number[]) => {
+    const n = y.length;
+    const x = Array.from({ length: n }, (_, i) => i + 1);
+    const xMean = x.reduce((a, b) => a + b, 0) / n;
+    const yMean = y.reduce((a, b) => a + b, 0) / n;
+    let sxx = 0, sxy = 0, sst = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = x[i] - xMean;
+      const dy = y[i] - yMean;
+      sxx += dx * dx;
+      sxy += dx * dy;
+      sst += dy * dy;
+    }
+    const slope = sxx === 0 ? 0 : sxy / sxx;
+    const intercept = yMean - slope * xMean;
+    const yhat = x.map(xi => slope * xi + intercept);
+    let sse = 0;
+    for (let i = 0; i < n; i++) sse += (y[i] - yhat[i]) ** 2;
+    const r2 = sst === 0 ? 1 : clamp(1 - sse / sst, 0, 1);
+    return { slope, intercept, yhat, r2 };
+  };
+
+  const calcMovingAverage = (y: number[], window = 3) => {
+    const n = y.length;
+    const out: number[] = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+      const start = Math.max(0, i - window + 1);
+      const slice = y.slice(start, i + 1);
+      out[i] = slice.reduce((a, b) => a + b, 0) / slice.length;
+    }
+    return out;
+  };
+
+  const rmse = (a: number[], b: number[]) => {
+    const n = a.length;
+    let s = 0;
+    for (let i = 0; i < n; i++) s += (a[i] - b[i]) ** 2;
+    return Math.sqrt(s / Math.max(1, n));
+  };
+
+  const toPercent = (v: number) => `${Math.round(v)}%`;
 
   if (loading) {
     return (
@@ -464,81 +510,206 @@ const ManagerDashboard: React.FC = () => {
       {/* Demand Forecasting */}
       <div className="bg-card-light dark:bg-card-dark p-6 rounded-2xl shadow-sm border border-border-light dark:border-border-dark">
         <h2 className="text-2xl font-bold font-heading mb-4">Demand Forecasting</h2>
-        
-        {/* Product Selector */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+
+        <div className="flex gap-3 mb-5 overflow-x-auto pb-2">
           {forecastData.map((item, index) => (
             <button
               key={item.product.id}
               onClick={() => setSelectedForecast(index)}
-              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+              className={`min-w-[210px] text-left p-4 rounded-xl border transition-all duration-200 shadow-sm ${
                 selectedForecast === index
-                  ? 'bg-primary text-white'
-                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'border-primary bg-primary/10 ring-2 ring-primary/30'
+                  : 'border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
-              {item.product.name}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{item.product.category}</p>
+                  <p className="font-semibold mt-0.5">{item.product.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Stock</p>
+                  <p className="text-lg font-bold">{item.product.currentQuantity}</p>
+                </div>
+              </div>
             </button>
           ))}
         </div>
 
-        {forecastData[selectedForecast] && (
-          <div>
-            {/* Product Info */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Current Stock</p>
-                <p className="text-2xl font-bold mt-1">{forecastData[selectedForecast].product.currentQuantity}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Category</p>
-                <p className="text-lg font-semibold mt-1">{forecastData[selectedForecast].product.category}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <p className="text-xs text-slate-500 dark:text-slate-400">SKU</p>
-                <p className="text-lg font-semibold mt-1">{forecastData[selectedForecast].product.sku}</p>
-              </div>
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                <p className="text-xs text-slate-500 dark:text-slate-400">Daily Consumption</p>
-                <p className="text-2xl font-bold mt-1">{forecastData[selectedForecast].estimatedDailyConsumption}</p>
-              </div>
-            </div>
+        {forecastData[selectedForecast] && (() => {
+          const sel = forecastData[selectedForecast];
+          const y = sel.forecast.map(d => d.projectedQuantity);
+          const days = sel.forecast.map(d => d.day);
+          const reg = calcLinearRegression(y);
+          const ma = calcMovingAverage(y, 3);
+          const ensemble = y;
+          const allVals = [...ensemble, ...reg.yhat, ...ma];
+          const minV = Math.min(...allVals);
+          const maxV = Math.max(...allVals);
+          const pad = Math.max(10, (maxV - minV) * 0.1);
+          const minY = minV - pad;
+          const maxY = maxV + pad;
+          const range = Math.max(1, maxY - minY);
 
-            {/* Forecast Graph (Simple Bar Chart) */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">7-Day Projection</h3>
-              {forecastData[selectedForecast].forecast.map((day) => (
-                <div key={day.day} className="flex items-center gap-3">
-                  <div className="w-20 text-sm text-slate-600 dark:text-slate-400">
-                    Day {day.day}
-                  </div>
-                  <div className="flex-1">
-                    <div className="h-8 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
-                      <div
-                        className={`h-full rounded-lg transition-all ${
-                          day.trend === 'critical'
-                            ? 'bg-red-500'
-                            : day.trend === 'stable'
-                            ? 'bg-green-500'
-                            : 'bg-blue-500'
-                        }`}
-                        style={{
-                          width: `${Math.min(100, (day.projectedQuantity / forecastData[selectedForecast].product.currentQuantity) * 100)}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="w-16 text-right text-sm font-semibold">
-                    {day.projectedQuantity}
-                  </div>
-                  <div className="w-20 text-xs text-slate-500">
-                    {day.date}
+          const nrmseReg = rmse(ensemble, reg.yhat) / (Math.max(1, Math.max(...ensemble) - Math.min(...ensemble)));
+          const nrmseMA = rmse(ensemble, ma) / (Math.max(1, Math.max(...ensemble) - Math.min(...ensemble)));
+          const confRegression = clamp((1 - nrmseReg) * 100, 0, 100);
+          const confMA = clamp((1 - nrmseMA) * 100, 0, 100);
+          const confEnsemble = (confRegression + confMA) / 2;
+
+          const pctChange = (ensemble[ensemble.length - 1] - ensemble[0]) / Math.max(1, ensemble[0]);
+          const trend = pctChange > 0.02 ? 'increasing' : pctChange < -0.02 ? 'declining' : 'stable';
+          const trendStrength = clamp(Math.abs(pctChange) * 100, 0, 100);
+          const trendArrow = trend === 'increasing' ? '↗' : trend === 'declining' ? '↘' : '→';
+          const trendBadge = trend === 'increasing'
+            ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
+            : trend === 'declining'
+            ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
+            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+
+          const reorderIdx = ensemble.findIndex(v => v <= REORDER_THRESHOLD);
+          const reorderText = reorderIdx === -1 ? '> 7 days' : `${reorderIdx + 1} day(s)`;
+
+          // chart helpers
+          const W = 700, H = 260;
+          const m = { top: 20, right: 16, bottom: 30, left: 40 };
+          const cw = W - m.left - m.right;
+          const ch = H - m.top - m.bottom;
+          const xFor = (i: number) => m.left + (cw * (days[i] - 1)) / Math.max(1, days.length - 1);
+          const yFor = (v: number) => m.top + ch - ((v - minY) / range) * ch;
+          const pts = (arr: number[]) => arr.map((v, i) => `${xFor(i)},${yFor(v)}`).join(' ');
+
+          return (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Current Stock Level</p>
+                  <p className="text-2xl font-bold mt-1">{sel.product.currentQuantity}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Daily Consumption Rate</p>
+                  <p className="text-2xl font-bold mt-1">{sel.estimatedDailyConsumption}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Forecast Accuracy Score</p>
+                  <p className="text-2xl font-bold mt-1">{toPercent(confEnsemble)}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Days Until Reorder Needed</p>
+                  <p className="text-2xl font-bold mt-1">{reorderText}</p>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-400">7-Day Projection</h3>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="flex items-center gap-1"><span className="text-primary">●</span> Ensemble</span>
+                    <span className="flex items-center gap-1"><span className="text-slate-500">○</span> Linear Regression</span>
+                    <span className="flex items-center gap-1"><span className="text-sky-500">△</span> Moving Average</span>
                   </div>
                 </div>
-              ))}
+                <div className="w-full overflow-x-auto">
+                  <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[560px]">
+                    <line x1={m.left} y1={H - m.bottom} x2={W - m.right} y2={H - m.bottom} stroke="#cbd5e1" strokeWidth={1} />
+                    <line x1={m.left} y1={m.top} x2={m.left} y2={H - m.bottom} stroke="#cbd5e1" strokeWidth={1} />
+                    <polyline points={pts(ensemble)} fill="none" stroke="currentColor" className="text-primary" strokeWidth={2.5} />
+                    <polyline points={pts(reg.yhat)} fill="none" stroke="currentColor" className="text-slate-500" strokeWidth={2} strokeDasharray="2,6" />
+                    <polyline points={pts(ma)} fill="none" stroke="currentColor" className="text-sky-500" strokeWidth={2} strokeDasharray="6,6" />
+                    {ensemble.map((v, i) => (
+                      <circle key={`e-${i}`} cx={xFor(i)} cy={yFor(v)} r={3.5} fill="currentColor" className="text-primary">
+                        <title>{`Day ${days[i]} • Ensemble: ${v}`}</title>
+                      </circle>
+                    ))}
+                    {reg.yhat.map((v, i) => (
+                      <circle key={`r-${i}`} cx={xFor(i)} cy={yFor(v)} r={3} fill="#fff" stroke="#64748b" strokeWidth={1.5}>
+                        <title>{`Day ${days[i]} • Regression: ${v.toFixed(1)}`}</title>
+                      </circle>
+                    ))}
+                    {ma.map((v, i) => (
+                      <circle key={`m-${i}`} cx={xFor(i)} cy={yFor(v)} r={3} fill="#fff" stroke="#0ea5e9" strokeWidth={1.5}>
+                        <title>{`Day ${days[i]} • Moving Avg: ${v.toFixed(1)}`}</title>
+                      </circle>
+                    ))}
+                    {days.map((d, i) => (
+                      <text key={`xl-${i}`} x={xFor(i)} y={H - m.bottom + 18} textAnchor="middle" className="fill-slate-500 text-[10px]">D{d}</text>
+                    ))}
+                  </svg>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`p-4 rounded-xl border ${trendBadge}`}>
+                  <div className="text-sm font-semibold">Trend</div>
+                  <div className="mt-1 text-xl font-bold flex items-center gap-2">
+                    <span>{trend === 'increasing' ? '🟢' : trend === 'declining' ? '🔴' : '🟡'}</span>
+                    <span className="capitalize">{trend}</span>
+                    <span className="opacity-70">{trendArrow}</span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <div className="text-sm text-slate-500">Trend Strength</div>
+                  <div className="mt-1 text-xl font-bold">{toPercent(trendStrength)}</div>
+                </div>
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-border-light dark:border-border-dark">
+                  <div className="text-sm text-slate-500">Regression R²</div>
+                  <div className="mt-1 text-xl font-bold">{toPercent(reg.r2 * 100)}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span>Ensemble</span><span>{toPercent(confEnsemble)}</span></div>
+                    <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded">
+                      <div className="h-2 bg-primary rounded" style={{ width: `${confEnsemble}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span>Linear Regression</span><span>{toPercent(confRegression)}</span></div>
+                    <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded">
+                      <div className="h-2 bg-slate-500 rounded" style={{ width: `${confRegression}%` }} />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-sm mb-1"><span>Moving Average</span><span>{toPercent(confMA)}</span></div>
+                    <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded">
+                      <div className="h-2 bg-sky-500 rounded" style={{ width: `${confMA}%` }} />
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-border-light dark:border-border-dark">
+                        <th className="py-2 pr-3">Model</th>
+                        <th className="py-2 pr-3">Score</th>
+                        <th className="py-2">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border-light dark:border-border-dark">
+                        <td className="py-2 pr-3">Ensemble</td>
+                        <td className="py-2 pr-3 font-semibold">{toPercent(confEnsemble)}</td>
+                        <td className="py-2">Primary signal (from system forecast)</td>
+                      </tr>
+                      <tr className="border-b border-border-light dark:border-border-dark">
+                        <td className="py-2 pr-3">Linear Regression</td>
+                        <td className="py-2 pr-3 font-semibold">{toPercent(confRegression)}</td>
+                        <td className="py-2">Dotted line (trend fit)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 pr-3">Moving Average</td>
+                        <td className="py-2 pr-3 font-semibold">{toPercent(confMA)}</td>
+                        <td className="py-2">Dashed line (smoothing)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
